@@ -1,0 +1,82 @@
+CREATE DATABASE IF NOT EXISTS geo_db;
+
+USE geo_db;
+
+CREATE ROWSTORE TABLE IF NOT EXISTS london_boroughs (
+     name     VARCHAR(32),
+     hectares FLOAT,
+     geometry GEOGRAPHY,
+     centroid GEOGRAPHYPOINT,
+     INDEX(geometry)
+);
+
+CREATE ROWSTORE TABLE IF NOT EXISTS london_connections (
+     station1 INT,
+     station2 INT,
+     line     INT,
+     time     INT,
+     PRIMARY KEY(station1, station2, line)
+);
+
+CREATE ROWSTORE TABLE IF NOT EXISTS london_lines (
+     line   INT PRIMARY KEY,
+     name   VARCHAR(32),
+     colour VARCHAR(8),
+     stripe VARCHAR(8)
+);
+
+CREATE ROWSTORE TABLE IF NOT EXISTS london_stations (
+     id          INT PRIMARY KEY,
+     latitude    DOUBLE,
+     longitude   DOUBLE,
+     name        VARCHAR(32),
+     zone        FLOAT,
+     total_lines INT,
+     rail        INT,
+     geometry AS GEOGRAPHY_POINT(longitude, latitude) PERSISTED GEOGRAPHYPOINT,
+     INDEX(geometry)
+);
+
+SELECT * FROM london_boroughs LIMIT 5;
+
+SELECT * FROM london_connections LIMIT 5;
+
+SELECT * FROM london_lines LIMIT 5;
+
+SELECT * FROM london_stations LIMIT 5;
+
+-- Area (GEOGRAPHY_AREA)
+SELECT name, ROUND(GEOGRAPHY_AREA(geometry), 0) AS sqm
+FROM london_boroughs ORDER BY sqm;
+
+-- Distance (GEOGRAPHY_DISTANCE)
+SELECT b.name AS neighbour, ROUND(GEOGRAPHY_DISTANCE(a.geometry, b.geometry), 0) AS distance_from_border
+FROM london_boroughs a, london_boroughs b
+WHERE a.name = "Merton"
+ORDER BY distance_from_border;
+
+-- Length (GEOGRAPHY_LENGTH)
+SELECT name, ROUND(GEOGRAPHY_LENGTH(geometry), 0) AS perimeter
+FROM london_boroughs
+ORDER BY perimeter DESC;
+
+-- Contains (GEOGRAPHY_CONTAINS)
+SELECT b.name
+FROM london_boroughs a, london_stations b
+WHERE GEOGRAPHY_CONTAINS(a.geometry, b.geometry) AND a.name = "Merton";
+
+-- Intersects (GEOGRAPHY_INTERSECTS)
+SELECT a.name
+FROM london_boroughs a, london_stations b
+WHERE GEOGRAPHY_INTERSECTS(b.geometry, a.geometry) AND b.name = "Morden";
+
+-- Approx. Intersects (APPROX_GEOGRAPHY_INTERSECTS)
+SELECT a.name
+FROM london_boroughs a, london_stations b
+WHERE APPROX_GEOGRAPHY_INTERSECTS(b.geometry, a.geometry) AND b.name = "Morden";
+
+-- Within Distance (GEOGRAPHY_WITHIN_DISTANCE)
+SELECT a.name
+FROM london_stations a, london_boroughs b
+WHERE GEOGRAPHY_WITHIN_DISTANCE(a.geometry, b.centroid, 100)
+ORDER BY name;
