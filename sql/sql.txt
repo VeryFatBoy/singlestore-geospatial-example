@@ -46,8 +46,9 @@ SELECT * FROM london_lines LIMIT 5;
 SELECT * FROM london_stations LIMIT 5;
 
 -- Area (GEOGRAPHY_AREA)
-SELECT name, ROUND(GEOGRAPHY_AREA(geometry), 0) AS sqm
-FROM london_boroughs ORDER BY sqm;
+SELECT ROUND(GEOGRAPHY_AREA(geometry), 0) AS sqm
+FROM london_boroughs
+WHERE name = "Merton";
 
 -- Distance (GEOGRAPHY_DISTANCE)
 SELECT b.name AS neighbour, ROUND(GEOGRAPHY_DISTANCE(a.geometry, b.geometry), 0) AS distance_from_border
