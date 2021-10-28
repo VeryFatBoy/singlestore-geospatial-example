@@ -54,17 +54,20 @@ WHERE name = "Merton";
 SELECT b.name AS neighbour, ROUND(GEOGRAPHY_DISTANCE(a.geometry, b.geometry), 0) AS distance_from_border
 FROM london_boroughs a, london_boroughs b
 WHERE a.name = "Merton"
-ORDER BY distance_from_border;
+ORDER BY distance_from_border
+LIMIT 10;
 
 -- Length (GEOGRAPHY_LENGTH)
 SELECT name, ROUND(GEOGRAPHY_LENGTH(geometry), 0) AS perimeter
 FROM london_boroughs
-ORDER BY perimeter DESC;
+ORDER BY perimeter DESC
+LIMIT 5;
 
 -- Contains (GEOGRAPHY_CONTAINS)
 SELECT b.name
 FROM london_boroughs a, london_stations b
-WHERE GEOGRAPHY_CONTAINS(a.geometry, b.geometry) AND a.name = "Merton";
+WHERE GEOGRAPHY_CONTAINS(a.geometry, b.geometry) AND a.name = "Merton"
+ORDER BY name;
 
 -- Intersects (GEOGRAPHY_INTERSECTS)
 SELECT a.name
