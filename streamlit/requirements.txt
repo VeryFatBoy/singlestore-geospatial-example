@@ -2,7 +2,9 @@
 
 streamlit
 streamlit-folium
-pandas
-networkx
 folium
-pymysql
+mysqlclient
+networkx
+pandas
+sqlalchemy
+
