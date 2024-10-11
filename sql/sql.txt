@@ -2,39 +2,43 @@ CREATE DATABASE IF NOT EXISTS geo_db;
 
 USE geo_db;
 
+DROP TABLE IF EXISTS london_boroughs;
 CREATE ROWSTORE TABLE IF NOT EXISTS london_boroughs (
-     name     VARCHAR(32),
-     hectares FLOAT,
-     geometry GEOGRAPHY,
-     centroid GEOGRAPHYPOINT,
-     INDEX(geometry)
+    name     VARCHAR(32),
+    hectares FLOAT,
+    geometry GEOGRAPHY,
+    centroid GEOGRAPHYPOINT,
+    INDEX(geometry)
 );
 
+DROP TABLE IF EXISTS london_connections;
 CREATE ROWSTORE TABLE IF NOT EXISTS london_connections (
-     station1 INT,
-     station2 INT,
-     line     INT,
-     time     INT,
-     PRIMARY KEY(station1, station2, line)
+    station1 INT,
+    station2 INT,
+    line     INT,
+    time     INT,
+    PRIMARY KEY(station1, station2, line)
 );
 
+DROP TABLE IF EXISTS london_lines;
 CREATE ROWSTORE TABLE IF NOT EXISTS london_lines (
-     line   INT PRIMARY KEY,
-     name   VARCHAR(32),
-     colour VARCHAR(8),
-     stripe VARCHAR(8)
+    line   INT PRIMARY KEY,
+    name   VARCHAR(32),
+    colour VARCHAR(8),
+    stripe VARCHAR(8)
 );
 
+DROP TABLE IF EXISTS london_stations;
 CREATE ROWSTORE TABLE IF NOT EXISTS london_stations (
-     id          INT PRIMARY KEY,
-     latitude    DOUBLE,
-     longitude   DOUBLE,
-     name        VARCHAR(32),
-     zone        FLOAT,
-     total_lines INT,
-     rail        INT,
-     geometry AS GEOGRAPHY_POINT(longitude, latitude) PERSISTED GEOGRAPHYPOINT,
-     INDEX(geometry)
+    id          INT PRIMARY KEY,
+    latitude    DOUBLE,
+    longitude   DOUBLE,
+    name        VARCHAR(32),
+    zone        FLOAT,
+    total_lines INT,
+    rail        INT,
+    geometry AS GEOGRAPHY_POINT(longitude, latitude) PERSISTED GEOGRAPHYPOINT,
+    INDEX(geometry)
 );
 
 SELECT * FROM london_boroughs LIMIT 5;
