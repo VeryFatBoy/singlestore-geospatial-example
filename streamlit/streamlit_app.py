@@ -1,70 +1,64 @@
 # streamlit_app.py
 
 import streamlit as st
-import pandas as pd
-import networkx as nx
 import folium
-import pymysql
+import networkx as nx
+import pandas as pd
+import sqlalchemy
+from streamlit_folium import st_folium
 
-from streamlit_folium import folium_static
+# Initialise connection.
+conn = st.connection("singlestore", type = "sql")
 
-# Initialize connection.
-
-def init_connection():
-    return pymysql.connect(**st.secrets["singlestore"])
-
-conn = init_connection()
-
-# Perform query.
-
-connections_df = pd.read_sql("""
-SELECT *
+stmt1 = """
+SELECT station1, station2, time
 FROM london_connections;
-""", conn)
+"""
+connections_df = conn.query(stmt1)
 
-stations_df = pd.read_sql("""
-SELECT *
+stmt2 = """
+SELECT id, name, latitude, longitude
 FROM london_stations
 ORDER BY name;
-""", conn)
-
+"""
+stations_df = conn.query(stmt2)
 stations_df.set_index("id", inplace = True)
 
 st.subheader("Shortest Path")
-
 from_name = st.sidebar.selectbox("From", stations_df["name"])
 to_name = st.sidebar.selectbox("To", stations_df["name"])
 
 graph = nx.Graph()
-
-for connection_id, connection in connections_df.iterrows():
-  station1_name = stations_df.loc[connection["station1"]]["name"]
-  station2_name = stations_df.loc[connection["station2"]]["name"]
-  graph.add_edge(station1_name, station2_name, time = connection["time"])
+graph.add_weighted_edges_from(
+    [(stations_df.loc[conn["station1"], "name"], stations_df.loc[conn["station2"], "name"], conn["time"]) 
+     for _, conn in connections_df.iterrows()]
+)
 
 shortest_path = nx.shortest_path(graph, from_name, to_name, weight = "time")
+shortest_path_df = pd.DataFrame({"name": shortest_path})
 
-shortest_path_df = pd.DataFrame({"name" : shortest_path})
+merged_df = shortest_path_df.join(stations_df.set_index("name"), on = "name")
 
-merged_df = pd.merge(shortest_path_df, stations_df, how = "left", on = "name")
-
-m = folium.Map(tiles = "Stamen Terrain")
+initial_location = [merged_df.iloc[0]["latitude"], merged_df.iloc[0]["longitude"]]
+m = folium.Map(location = initial_location, zoom_start = 13)
 
 sw = merged_df[["latitude", "longitude"]].min().values.tolist()
 ne = merged_df[["latitude", "longitude"]].max().values.tolist()
-
 m.fit_bounds([sw, ne])
 
-for i in range(0, len(merged_df)):
-  folium.Marker(
-    location = [merged_df.iloc[i]["latitude"], merged_df.iloc[i]["longitude"]],
-    popup = merged_df.iloc[i]["name"],
-  ).add_to(m)
+for i, row in merged_df.iterrows():
+    folium.Marker(
+        location = [row["latitude"], row["longitude"]],
+        popup = row["name"]
+    ).add_to(m)
 
-points = tuple(zip(merged_df.latitude, merged_df.longitude))
+folium.PolyLine(
+    locations = merged_df[["latitude", "longitude"]].values.tolist(),
+    color = "red",
+    weight = 3,
+    opacity = 1
+).add_to(m)
 
-folium.PolyLine(points, color = "red", weight = 3, opacity = 1).add_to(m)
-
-folium_static(m)
+st_folium(m)
 
 st.sidebar.write("Your Journey", shortest_path_df)
